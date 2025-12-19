@@ -37,12 +37,11 @@ CALL { WITH n DETACH DELETE n } IN TRANSACTIONS OF 100 ROWS
 
 ### 2. Ingest Large Dataset (~100K Transactions)
 ```cypher
-// post 25
 :param  file_path_root => 'https://raw.githubusercontent.com/halftermeyer/fraud-detection-training/main/data/data_csv/big/';
 :param file_0 => 'accounts.csv';
 :param file_1 => 'txs.csv';
 
-// CONSTRAINT creation
+// CONSTRAINT AND INDEX creation
 // -------------------
 //
 // Create node uniqueness constraints, ensuring no duplicates for the given node label and ID property exist in the database. This also ensures no duplicates are introduced in future.
@@ -51,6 +50,14 @@ CALL { WITH n DETACH DELETE n } IN TRANSACTIONS OF 100 ROWS
 CREATE CONSTRAINT `imp_uniq_Account_a_id` IF NOT EXISTS
 FOR (n: `Account`)
 REQUIRE (n.`a_id`) IS UNIQUE;
+
+CREATE INDEX transaction_date IF NOT EXISTS
+    FOR ()-[r:TRANSACTIONS]->() 
+    ON (r.date);
+
+CREATE INDEX transaction_amount IF NOT EXISTS
+    FOR ()-[r:TRANSACTIONS]->() 
+    ON (r.amount);
 
 :param idsToSkip => [];
 
@@ -91,21 +98,6 @@ CALL {
 } IN TRANSACTIONS OF 10000 ROWS;
 ```
 
-**Purpose**: Builds a realistic, large-scale transaction graph (the **haystack**) from public CSV datasets. Batch processing ensures efficiency.
-
-### 3. Add Needle — Inject Synthetic Mule Ring
-```cypher
-WITH 100 AS length
-UNWIND range(1, length) AS ix
-MERGE (a:Account {a_id: toString(ix)})
-MERGE (b:Account {a_id: toString(CASE (ix+1)%length WHEN 0 THEN length ELSE (ix+1)%length END)})
-CREATE (a)-[:TRANSACTION {
-  test: true,
-  amount: (1000*length) - ix,
-  date: datetime() - duration({days: length - ix})
-}]->(b);
-```
-
 **Purpose**: Creates a perfect cycle of 100 accounts forming a closed ring:
 - Each step transfers money to the next account.
 - Amounts decrease progressively (e.g., 99,999 → 99,998 → ... simulating fees).
@@ -132,7 +124,8 @@ WHERE allReduce(
   )
 RETURN path
 ```
-<img width="3202" height="1254" alt="Capture d’écran 2025-12-19 à 16 28 58" src="https://github.com/user-attachments/assets/d655ea74-7a14-4e4e-a7d8-dd971050ae97" />
+<img width="3200" height="1253" alt="Capture d’écran 2025-12-19 à 16 42 42" src="https://github.com/user-attachments/assets/2441f59c-08d0-46f1-997f-956291f4a27c" />
+
 
 **Purpose**: Finds all cycles (length ≥ 2) where:
 - Transaction dates are strictly increasing.
