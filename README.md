@@ -116,7 +116,7 @@ This synthetic ring is the **needle** — a known, detectable mule pattern delib
 
 ### 4. Find Mule Rings (Detection Query)
 ```cypher
-CYPHER 25 //runtime=parallel
+CYPHER 25 runtime=parallel
 MATCH path=(a:Account)-[txs:TRANSACTION]->{2,}(a)
 WHERE allReduce(
   span = {},
@@ -132,7 +132,7 @@ WHERE allReduce(
   )
 RETURN path
 ```
-<img width="3200" height="1258" alt="Capture d’écran 2025-12-19 à 16 25 30" src="https://github.com/user-attachments/assets/cd653a57-8a5c-4bb2-be7e-38171118ee58" />
+<img width="3202" height="1254" alt="Capture d’écran 2025-12-19 à 16 28 58" src="https://github.com/user-attachments/assets/d655ea74-7a14-4e4e-a7d8-dd971050ae97" />
 
 **Purpose**: Finds all cycles (length ≥ 2) where:
 - Transaction dates are strictly increasing.
