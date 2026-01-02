@@ -106,8 +106,18 @@ CALL {
 
 This synthetic ring is the **needle** — a known, detectable mule pattern deliberately hidden in the large random dataset.
 
-### 4. Find Mule Rings (Detection Query)
-```cypher
+### 3. Add Needle in Haystack
+
+Adding a big fraud cycle
+
+``` cypher
+WITH 100 AS length
+UNWIND range(1,length) AS ix
+MERGE (a:Account {a_id:toString(ix)})
+MERGE (b:Account {a_id:toString(CASE (ix+1)%length WHEN  0 THEN length ELSE (ix+1)%length END)})
+CREATE (a)-[:TRANSACTION {test:true, amount: (1000*length)-ix, date: datetime()-duration({days: length - ix})}]->(b);
+```## 4. Find Mule Rings (Detection Query)
+``````cypher
 CYPHER 25 runtime=parallel
 MATCH path=(a:Account)-[txs:TRANSACTION]->{2,}(a)
 WHERE allReduce(
