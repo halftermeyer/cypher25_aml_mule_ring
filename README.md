@@ -98,27 +98,7 @@ CALL {
 } IN TRANSACTIONS OF 10000 ROWS;
 ```
 
-**Purpose**: Creates a perfect cycle of 100 accounts forming a closed ring:
-- Each step transfers money to the next account.
-- Amounts decrease progressively (e.g., 99,999 → 99,998 → ... simulating fees).
-- Dates increase along the path (older → newer as money moves forward).
-- Marked with `test: true` for easy verification.
-
-This synthetic ring is the **needle** — a known, detectable mule pattern deliberately hidden in the large random dataset.
-
-### 3. Add Needle in Haystack
-
-Adding a big fraud cycle
-
-``` cypher
-WITH 100 AS length
-UNWIND range(1,length) AS ix
-MERGE (a:Account {a_id:toString(ix)})
-MERGE (b:Account {a_id:toString(CASE (ix+1)%length WHEN  0 THEN length ELSE (ix+1)%length END)})
-CREATE (a)-[:TRANSACTION {test:true, amount: (1000*length)-ix, date: datetime()-duration({days: length - ix})}]->(b);
-```
-
-### 4. Find Mule Rings (Detection Query)
+### 3. Find Mule Rings (Detection Query)
 ```cypher
 CYPHER 25 runtime=parallel
 MATCH path=(a:Account)-[txs:TRANSACTION]->{2,}(a)
@@ -145,12 +125,3 @@ RETURN path
 - Each amount is more than 80% of the previous (allowing up to ~20% fee per mule).
 
 This query should reliably return the synthetic 100-node ring (the needle) while potentially flagging any similar real patterns in the haystack.
-
-## Why This "Needle in a Haystack" Approach Matters
-
-- **Validation at Scale**: Proves the detection logic works even when suspicious patterns are rare and buried in massive benign data.
-- **Performance Testing**: Demonstrates Neo4j's ability to traverse and filter variable-length paths efficiently on large graphs.
-- **Real-World Simulation**: Mirrors actual AML challenges — mule rings are infrequent but high-impact.
-- **Extensibility**: Easily adjust thresholds (e.g., min cycle length, max fee %, amount floors) or combine with GDS algorithms (community detection, centrality).
-
-This workflow provides a powerful, reproducible framework for developing and validating advanced graph-based AML detection of money mule rings at true financial-scale volumes.
