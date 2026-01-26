@@ -16,10 +16,9 @@ Traditional AML systems based on rules or relational databases struggle to detec
 This collection of saved Cypher queries implements a complete **"needle in a haystack" testing workflow**:
 1. **optional** -- Clean the database.
 2. Load a large realistic dataset (~100K transactions) (the **haystack**).
-3. **optional** -- Inject a known synthetic mule ring (the **needle**).
-4. Detect mule ring patterns across the entire graph.
+3. Detect mule ring patterns across the entire graph.
 
-The synthetic ring acts as a **needle in a haystack**: a deliberately planted, detectable pattern hidden within a much larger, mostly benign transaction graph. This allows validation that the detection query actually finds real mule-like structures even at scale.
+The random graph hides some synthetic rings acting as **needles in a haystack**: a deliberately planted, detectable pattern hidden within a much larger, mostly benign transaction graph. This allows validation that the detection query actually finds real mule-like structures even at scale.
 
 ## Workflow and Queries Explained
 
